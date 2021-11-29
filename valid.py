@@ -95,7 +95,7 @@ if __name__ == '__main__':
     print(args.device)
     os.environ['CUDA_VISIBLE_DEVICES'] = "1,2,3,4,5"
     devcie = torch.device("cuda")
-
+#######temp
     batch_size = 6
     lr = 0.00001
     save_root = "/45TB/dc/parking/paper_checkpoint/{}".format(args.model)
