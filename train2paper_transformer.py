@@ -91,7 +91,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="model test")
     parser.add_argument('--model', default='vgg16', type=str, metavar='MODEL',
                         help='Name of model to train (default: "resnet50"')
-    parser.add_argument('--pretrained', action='store_true', default=False,
+    parser.add_argument('--pretrained', action='store_true', default=True,
                         help='Start with pretrained version of specified network (if avail)')
     parser.add_argument('--num-classes', type=int, default=3, metavar='N',
                         help='number of label classes (Model default if None)')
@@ -189,7 +189,8 @@ if __name__ == '__main__':
     print(model)
     model = nn.DataParallel(model)
 
-    model.load_state_dict(torch.load('/21TB/dc/parking/checkpoint/lstm_layer/lstm_vit_11_17_14_00_acc9226.pth'))
+    if not args.pretrained:
+        model.load_state_dict(torch.load('/21TB/dc/parking/checkpoint/lstm_layer/lstm_vit_11_17_14_00_acc9226.pth'))
     logging.info("model loaded")
 
     model = model.to(devcie)
