@@ -86,7 +86,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="model test")
     parser.add_argument('--model', default='vgg16', type=str, metavar='MODEL',
                         help='Name of model to train (default: "resnet50"')
-    parser.add_argument('--pretrained', action='store_true', default=False,
+    parser.add_argument('--pretrained', action='store_true', default=True,
                         help='Start with pretrained version of specified network (if avail)')
     parser.add_argument('--num-classes', type=int, default=3, metavar='N',
                         help='number of label classes (Model default if None)')
