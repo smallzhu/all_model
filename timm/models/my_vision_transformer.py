@@ -1,3 +1,5 @@
+
+
 """ Hybrid Vision Transformer (ViT) in PyTorch
 
 A PyTorch implement of the Hybrid Vision Transformers as described in:
@@ -132,13 +134,33 @@ class HybridEmbed(nn.Module):
         self.num_patches = self.grid_size[0] * self.grid_size[1]
         self.proj = nn.Conv2d(feature_dim, embed_dim, kernel_size=patch_size, stride=patch_size)
 
+        self.biLSTM = nn.Sequential(BiLSTM(embed_dim, embed_dim, embed_dim),
+                                    BiLSTM(embed_dim, embed_dim, embed_dim))
+
     def forward(self, x):
         x = self.backbone(x)
         if isinstance(x, (list, tuple)):
             x = x[-1]  # last feature if backbone outputs list/tuple of features
         x = self.proj(x).flatten(2).transpose(1, 2)
+        x = self.biLSTM(x)
         return x
 
+class BiLSTM(nn.Module):
+
+    def __init__(self, input_size, hidden_size, output_size):
+        super(BiLSTM, self).__init__()
+        self.rnn = nn.LSTM(input_size, hidden_size, bidirectional=True, batch_first=False)
+        self.linear = nn.Linear(hidden_size * 2, output_size)
+
+    def forward(self, input):
+        """
+        input : visual feature [batch_size x T x input_size]
+        output : contextual feature [batch_size x T x output_size]
+        """
+        self.rnn.flatten_parameters()
+        recurrent, _ = self.rnn(input)  # batch_size x T x input_size -> batch_size x T x (2*hidden_size)
+        output = self.linear(recurrent)  # batch_size x T x output_size
+        return output
 
 def _create_vision_transformer_hybrid(variant, backbone, pretrained=False, **kwargs):
     embed_layer = partial(HybridEmbed, backbone=backbone)
@@ -161,6 +183,18 @@ def _resnetv2(layers=(3, 4, 9), **kwargs):
             kwargs.get('in_chans', 3), stem_type=stem_type, preact=False, conv_layer=conv_layer)
     return backbone
 
+
+@register_model
+def my_vit_base_r50_s16_224(pretrained=False, **kwargs):
+    """ R50+ViT-B/S16 hybrid from original paper (https://arxiv.org/abs/2010.11929).
+    """
+    backbone = _resnetv2((3, 4, 9), **kwargs)
+    model_kwargs = dict(embed_dim=768, depth=12, num_heads=12, **kwargs)
+    model = _create_vision_transformer_hybrid(
+        'vit_base_r50_s16_224', backbone=backbone, pretrained=pretrained, **model_kwargs)
+    return model
+
+
 @register_model
 def my_vit_base_r50_s16_384(pretrained=False, **kwargs):
     """ R50+ViT-B/16 hybrid from original paper (https://arxiv.org/abs/2010.11929).
@@ -171,4 +205,24 @@ def my_vit_base_r50_s16_384(pretrained=False, **kwargs):
     model = _create_vision_transformer_hybrid(
         'vit_base_r50_s16_384', backbone=backbone, pretrained=pretrained, **model_kwargs)
     return model
+
+
+@register_model
+def my_vit_base_resnet50_384(pretrained=False, **kwargs):
+    # DEPRECATED this is forwarding to model def above for backwards compatibility
+    return my_vit_base_r50_s16_384(pretrained=pretrained, **kwargs)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
